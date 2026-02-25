@@ -1428,6 +1428,13 @@ export default function AddJobPage() {
                         </div>
                       )}
                       
+                      {form.watch("discount") > 0 && (
+                        <div className="flex justify-between items-center text-sm text-red-600">
+                          <span className="font-medium">Discount</span>
+                          <span className="font-semibold">- ₹{form.watch("discount").toLocaleString()}</span>
+                        </div>
+                      )}
+                      
                       <div className="border-t pt-2 mt-2 space-y-2">
                         <div className="flex justify-between items-center text-sm font-medium">
                           <span className="text-slate-500">Subtotal</span>
