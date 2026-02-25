@@ -949,8 +949,12 @@ export class MongoStorage implements IStorage {
           const accessory = await AccessoryMasterModel.findById(accId);
           if (accessory) {
             const currentStock = accessory.quantity || 0;
+            // When updating, we apply the delta (new - old). 
+            // If new > old, diff is positive, stock decreases.
+            // If new < old, diff is negative, stock increases.
             const updatedStock = Math.max(0, currentStock - diff);
-            await AccessoryMasterModel.findByIdAndUpdate(accessory._id, { quantity: updatedStock });
+            accessory.quantity = updatedStock;
+            await accessory.save();
             console.log(`[STORAGE UPDATE JOBCARD] Accessory ${accessory.name} stock adjusted by ${-diff}. Old: ${currentStock}, New: ${updatedStock}`);
           }
         }

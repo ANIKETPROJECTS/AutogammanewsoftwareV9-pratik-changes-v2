@@ -567,12 +567,30 @@ export default function AddJobPage() {
         }
         return sum;
       }, 0);
-      const remainingStock = a.quantity - usedInCurrentJob;
 
-      if (accessoryQty > remainingStock) {
+      // When editing, the master stock already has the current job's quantity deducted.
+      // So "available" for adding MORE should be: MasterStock - (NewlyAddedInForm - AlreadyInJob)
+      // But actually, it's simpler: The master stock (a.quantity) is what is in the warehouse NOW.
+      // If we are editing, and the job already uses 10, and master says 90, then total existence is 100.
+      // The user wants to see "90" if they haven't changed anything in the current edit session.
+      
+      const originalQty = jobToEdit?.accessories?.find((acc: any) => 
+        (acc.accessoryId || acc.id || acc._id) === selectedAccessory
+      )?.quantity || 0;
+
+      const currentFormQty = accessoryFields.reduce((sum, field: any) => {
+        if (field.accessoryId === selectedAccessory) {
+          return sum + (Number(field.quantity) || 0);
+        }
+        return sum;
+      }, 0);
+
+      const effectiveAvailable = a.quantity + originalQty - currentFormQty;
+
+      if (accessoryQty > effectiveAvailable) {
         toast({
           title: "Insufficient Stock",
-          description: `Only ${remainingStock} units available in stock (accounting for items already in this job).`,
+          description: `Only ${effectiveAvailable} units available in stock.`,
           variant: "destructive",
         });
         return;
@@ -1296,13 +1314,16 @@ export default function AddJobPage() {
                         {accessories.filter(a => a.category === selectedAccessoryCategory).map(a => (
                           <SelectItem key={a.id} value={a.id!}>
                             {a.name} (Stock: {(() => {
+                              const originalQty = jobToEdit?.accessories?.find((acc: any) => 
+                                (acc.accessoryId || acc.id || acc._id) === a.id
+                              )?.quantity || 0;
                               const usedInCurrentJob = accessoryFields.reduce((sum, field: any) => {
                                 if (field.accessoryId === a.id) {
                                   return sum + (Number(field.quantity) || 0);
                                 }
                                 return sum;
                               }, 0);
-                              return (a.quantity || 0) - usedInCurrentJob;
+                              return (a.quantity || 0) + originalQty - usedInCurrentJob;
                             })()})
                           </SelectItem>
                         ))}
@@ -1331,13 +1352,16 @@ export default function AddJobPage() {
                     <div className="h-11 flex items-center px-3 border rounded-md bg-slate-50 font-medium text-slate-700">
                       {selectedAccessory ? (() => {
                         const accessory = accessories.find(a => a.id === selectedAccessory);
+                        const originalQty = jobToEdit?.accessories?.find((acc: any) => 
+                          (acc.accessoryId || acc.id || acc._id) === selectedAccessory
+                        )?.quantity || 0;
                         const usedInCurrentJob = accessoryFields.reduce((sum, field: any) => {
                           if (field.accessoryId === selectedAccessory) {
                             return sum + (Number(field.quantity) || 0);
                           }
                           return sum;
                         }, 0);
-                        return `${(accessory?.quantity || 0) - usedInCurrentJob} units`;
+                        return `${(accessory?.quantity || 0) + originalQty - usedInCurrentJob} units`;
                       })() : "Select Accessory"}
                     </div>
                   </div>
