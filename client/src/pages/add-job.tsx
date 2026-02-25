@@ -1770,7 +1770,15 @@ export default function AddJobPage() {
                         <Input 
                           type="number"
                           value={discountSplit.autoGamma}
-                          onChange={(e) => setDiscountSplit(prev => ({ ...prev, autoGamma: Number(e.target.value) || 0 }))}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 0;
+                            const target = Number(pendingFormData.discount) || 0;
+                            if (val > target) {
+                              setDiscountSplit({ autoGamma: target, agnx: 0 });
+                            } else {
+                              setDiscountSplit({ autoGamma: val, agnx: Math.max(0, target - val) });
+                            }
+                          }}
                           className="h-9"
                         />
                       </div>
@@ -1779,7 +1787,15 @@ export default function AddJobPage() {
                         <Input 
                           type="number"
                           value={discountSplit.agnx}
-                          onChange={(e) => setDiscountSplit(prev => ({ ...prev, agnx: Number(e.target.value) || 0 }))}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 0;
+                            const target = Number(pendingFormData.discount) || 0;
+                            if (val > target) {
+                              setDiscountSplit({ autoGamma: 0, agnx: target });
+                            } else {
+                              setDiscountSplit({ agnx: val, autoGamma: Math.max(0, target - val) });
+                            }
+                          }}
                           className="h-9"
                         />
                       </div>
