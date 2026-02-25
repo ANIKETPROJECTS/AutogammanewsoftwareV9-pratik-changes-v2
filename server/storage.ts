@@ -154,6 +154,8 @@ const jobCardMongoSchema = new mongoose.Schema({
   accessories: [{ id: String, name: String, price: Number, quantity: Number, business: { type: String, default: "Auto Gamma" } }],
   laborCharge: { type: Number, default: 0 },
   laborBusiness: { type: String, default: "Auto Gamma" },
+  autoGammaDiscount: { type: Number, default: 0 },
+  agnxDiscount: { type: Number, default: 0 },
   discount: { type: Number, default: 0 },
   gst: { type: Number, default: 18 },
   serviceNotes: { type: String },
@@ -823,7 +825,7 @@ export class MongoStorage implements IStorage {
           ...(j.services || []), 
           ...(j.ppfs || []), 
           ...(j.accessories || [])
-        ].reduce((acc, item) => acc.add((item as any).business), new Set()).size;
+        ].reduce((acc, item) => acc.add((item as any).business), new Set<string>()).size;
 
         if (biz === "Auto Gamma") {
           discountAmount = autoGammaDiscount || (bizCount === 1 ? totalDiscount : 0);
@@ -1154,7 +1156,7 @@ export class MongoStorage implements IStorage {
           ...(j.services || []), 
           ...(j.ppfs || []), 
           ...(j.accessories || [])
-        ].reduce((acc, item) => acc.add((item as any).business), new Set()).size;
+        ].reduce((acc, item) => acc.add((item as any).business), new Set<string>()).size;
 
         if (biz === "Auto Gamma") {
           discountAmount = autoGammaDiscount || (bizCount === 1 ? totalDiscount : 0);

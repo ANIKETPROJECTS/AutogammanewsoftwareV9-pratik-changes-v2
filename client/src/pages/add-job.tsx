@@ -717,24 +717,6 @@ export default function AddJobPage() {
     if (laborCharge > 0) businessesPresent.add(laborBusiness);
 
     if (discount > 0) {
-      if (discountBusiness === "Auto Gamma" && !businessesPresent.has("Auto Gamma")) {
-        toast({
-          title: "Invalid Assignment",
-          description: "Discount assigned to Auto Gamma but no items are assigned to Auto Gamma.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (discountBusiness === "AGNX" && !businessesPresent.has("AGNX")) {
-        toast({
-          title: "Invalid Assignment",
-          description: "Discount assigned to AGNX but no items are assigned to AGNX.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       if (discountBusiness === "Split") {
         const splitTotal = Number(discountSplit.autoGamma) + Number(discountSplit.agnx);
         if (Math.abs(splitTotal - discount) > 0.01) {
@@ -761,11 +743,29 @@ export default function AddJobPage() {
           });
           return;
         }
+      } else {
+        if (discountBusiness === "Auto Gamma" && !businessesPresent.has("Auto Gamma")) {
+          toast({
+            title: "Invalid Assignment",
+            description: "Discount assigned to Auto Gamma but no items are assigned to Auto Gamma.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (discountBusiness === "AGNX" && !businessesPresent.has("AGNX")) {
+          toast({
+            title: "Invalid Assignment",
+            description: "Discount assigned to AGNX but no items are assigned to AGNX.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
     }
 
-    const autoGammaDiscount = discountBusiness === "Auto Gamma" ? discount : (discountBusiness === "Split" ? (Number(discountSplit.autoGamma) || 0) : 0);
-    const agnxDiscount = discountBusiness === "AGNX" ? discount : (discountBusiness === "Split" ? (Number(discountSplit.agnx) || 0) : 0);
+    const autoGammaDiscount = discountBusiness === "Split" ? (Number(discountSplit.autoGamma) || 0) : (discountBusiness === "Auto Gamma" ? discount : 0);
+    const agnxDiscount = discountBusiness === "Split" ? (Number(discountSplit.agnx) || 0) : (discountBusiness === "AGNX" ? discount : 0);
 
     const formattedData = {
       ...pendingFormData,
@@ -796,58 +796,9 @@ export default function AddJobPage() {
 
     // Fix: Pass the split discounts to invoice generation
     const generateInvoices = async (jobId: string) => {
-      const items = [
-        ...formattedData.services.map((s: any) => ({ ...s, type: "Service" })),
-        ...formattedData.ppfs.map((p: any) => ({ ...p, type: "PPF" })),
-        ...formattedData.accessories.map((a: any) => ({ ...a, type: "Accessory" }))
-      ];
-
-      const businesses = Array.from(new Set(items.map(item => item.business || "Auto Gamma")));
-      
-      for (const business of businesses) {
-        const businessItems = items.filter(item => (item.business || "Auto Gamma") === business);
-        const subtotal = businessItems.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
-        
-        const businessDiscount = business === "Auto Gamma" ? autoGammaDiscount : agnxDiscount;
-        const businessLabor = laborBusiness === business ? laborCharge : 0;
-        
-        const gstPercentage = formattedData.gst;
-        const totalBeforeGst = subtotal + businessLabor - businessDiscount;
-        const gstAmount = (totalBeforeGst * gstPercentage) / 100;
-
-        const invoiceData = {
-          jobCardId: jobId,
-          business,
-          customerName: formattedData.customerName,
-          phoneNumber: formattedData.phoneNumber,
-          emailAddress: formattedData.emailAddress,
-          vehicleMake: formattedData.make,
-          vehicleModel: formattedData.model,
-          vehicleYear: formattedData.year,
-          licensePlate: formattedData.licensePlate,
-          vehicleType: formattedData.vehicleType,
-          items: businessItems.map(item => ({
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity || 1,
-            type: item.type,
-            category: item.category,
-            warranty: item.warranty,
-            technician: item.technician
-          })),
-          subtotal: subtotal + businessLabor,
-          discount: businessDiscount,
-          laborCharge: businessLabor,
-          gstPercentage,
-          gstAmount,
-          totalAmount: totalBeforeGst + gstAmount,
-          date: new Date().toISOString(),
-          isPaid: markAsPaid,
-          payments: markAsPaid ? formattedData.payments : []
-        };
-
-        await apiRequest("POST", "/api/invoices", invoiceData);
-      }
+      // Logic for creating invoices is now handled on the server within storage.createJobCard/updateJobCard
+      // This client-side call is redundant and removed to avoid conflicts
+      console.log("Invoices generated on server for job:", jobId);
     };
 
     createJobMutation.mutate(formattedData, {
