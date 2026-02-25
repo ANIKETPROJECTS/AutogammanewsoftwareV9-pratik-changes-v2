@@ -207,6 +207,8 @@ export const jobCardSchema = z.object({
   accessories: z.array(jobCardItemSchema.extend({ quantity: z.number().optional() })).default([]),
   laborCharge: z.number().default(0),
   laborBusiness: z.enum(["Auto Gamma", "AGNX"]).default("Auto Gamma"),
+  autoGammaDiscount: z.number().optional().default(0),
+  agnxDiscount: z.number().optional().default(0),
   discount: z.number().default(0),
   gst: z.number().default(0),
   serviceNotes: z.string().optional(),

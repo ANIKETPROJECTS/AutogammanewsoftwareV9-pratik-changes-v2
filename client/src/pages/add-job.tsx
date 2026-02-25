@@ -356,6 +356,8 @@ export default function AddJobPage() {
   const [ppfExpanded, setPpfExpanded] = useState(false);
   const [accessoriesExpanded, setAccessoriesExpanded] = useState(false);
   const [laborBusiness, setLaborBusiness] = useState<string>("Auto Gamma");
+  const [discountBusiness, setDiscountBusiness] = useState<string>("Auto Gamma");
+  const [discountSplit, setDiscountSplit] = useState<{ autoGamma: number; agnx: number }>({ autoGamma: 0, agnx: 0 });
   const [businessAssignments, setBusinessAssignments] = useState<Record<string, string>>({});
   const [pendingFormData, setPendingFormData] = useState<any>(null);
   const [markAsPaid, setMarkAsPaid] = useState(false);
@@ -695,6 +697,63 @@ export default function AddJobPage() {
   const handleCompleteWithBusiness = () => {
     if (!pendingFormData) return;
 
+    const laborCharge = Number(pendingFormData.laborCharge || 0);
+    const discount = Number(pendingFormData.discount || 0);
+
+    const businessesPresent = new Set(Object.values(businessAssignments));
+    if (laborCharge > 0) businessesPresent.add(laborBusiness);
+
+    if (discount > 0) {
+      if (discountBusiness === "Auto Gamma" && !businessesPresent.has("Auto Gamma")) {
+        toast({
+          title: "Invalid Assignment",
+          description: "Discount assigned to Auto Gamma but no items are assigned to Auto Gamma.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (discountBusiness === "AGNX" && !businessesPresent.has("AGNX")) {
+        toast({
+          title: "Invalid Assignment",
+          description: "Discount assigned to AGNX but no items are assigned to AGNX.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (discountBusiness === "Split") {
+        const splitTotal = Number(discountSplit.autoGamma) + Number(discountSplit.agnx);
+        if (Math.abs(splitTotal - discount) > 0.01) {
+          toast({
+            title: "Invalid Split",
+            description: `Split discount total (₹${splitTotal.toLocaleString()}) must equal total discount (₹${discount.toLocaleString()}).`,
+            variant: "destructive",
+          });
+          return;
+        }
+        if (discountSplit.autoGamma > 0 && !businessesPresent.has("Auto Gamma")) {
+          toast({
+            title: "Invalid Split",
+            description: "Auto Gamma discount split specified but no items are assigned to Auto Gamma.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (discountSplit.agnx > 0 && !businessesPresent.has("AGNX")) {
+          toast({
+            title: "Invalid Split",
+            description: "AGNX discount split specified but no items are assigned to AGNX.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
+    const autoGammaDiscount = discountBusiness === "Auto Gamma" ? discount : (discountBusiness === "Split" ? discountSplit.autoGamma : 0);
+    const agnxDiscount = discountBusiness === "AGNX" ? discount : (discountBusiness === "Split" ? discountSplit.agnx : 0);
+
     const formattedData = {
       ...pendingFormData,
       services: (pendingFormData.services || []).map((s: any, i: number) => ({ 
@@ -714,9 +773,11 @@ export default function AddJobPage() {
       })),
       isPaid: markAsPaid,
       payments: markAsPaid ? payments.map((p: any) => ({ ...p, amount: Number(p.amount) })) : [],
-      laborCharge: Number(pendingFormData.laborCharge),
+      laborCharge: laborCharge,
       laborBusiness: laborBusiness,
-      discount: Number(pendingFormData.discount),
+      discount: discount,
+      autoGammaDiscount: autoGammaDiscount,
+      agnxDiscount: agnxDiscount,
       gst: Number(pendingFormData.gst),
     };
     createJobMutation.mutate(formattedData);
@@ -1674,6 +1735,59 @@ export default function AddJobPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+              )}
+
+              {pendingFormData && Number(pendingFormData.discount) > 0 && (
+                <div className="pt-4 border-t space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
+                    <div>
+                      <p className="font-semibold text-slate-900">Discount</p>
+                      <p className="text-sm text-slate-500">₹{pendingFormData.discount}</p>
+                    </div>
+                    <div className="w-48">
+                      <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Assign To</p>
+                      <Select 
+                        value={discountBusiness} 
+                        onValueChange={(val: any) => setDiscountBusiness(val)}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Auto Gamma">Auto Gamma</SelectItem>
+                          <SelectItem value="AGNX">AGNX</SelectItem>
+                          <SelectItem value="Split">Split</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {discountBusiness === "Split" && (
+                    <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-red-50/30">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Auto Gamma Portion (₹)</label>
+                        <Input 
+                          type="number"
+                          value={discountSplit.autoGamma}
+                          onChange={(e) => setDiscountSplit(prev => ({ ...prev, autoGamma: Number(e.target.value) || 0 }))}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AGNX Portion (₹)</label>
+                        <Input 
+                          type="number"
+                          value={discountSplit.agnx}
+                          onChange={(e) => setDiscountSplit(prev => ({ ...prev, agnx: Number(e.target.value) || 0 }))}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="col-span-2 text-[10px] font-medium text-slate-500 text-center">
+                        Total Split: ₹{(Number(discountSplit.autoGamma) + Number(discountSplit.agnx)).toLocaleString()} / Target: ₹{Number(pendingFormData.discount).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

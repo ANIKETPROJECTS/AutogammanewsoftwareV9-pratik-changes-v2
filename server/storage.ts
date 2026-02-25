@@ -813,7 +813,17 @@ export class MongoStorage implements IStorage {
 
       if (bizItems.length > 0) {
         const itemsSubtotal = bizItems.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
-        const discountAmount = j.discount || 0;
+        
+        let discountAmount = 0;
+        const businesses = new Set([...(j.services || []), ...(j.ppfs || []), ...(j.accessories || [])].map(item => item.business));
+        if ((j as any).laborBusiness) businesses.add((j as any).laborBusiness);
+        
+        if (businesses.size > 1) {
+          discountAmount = biz === "Auto Gamma" ? (j.autoGammaDiscount || 0) : (j.agnxDiscount || 0);
+        } else {
+          discountAmount = j.discount || 0;
+        }
+
         const subtotalAfterDiscount = itemsSubtotal - discountAmount;
         const gstRate = j.gst || 18;
         
@@ -1127,7 +1137,17 @@ export class MongoStorage implements IStorage {
       
       if (bizItems.length > 0) {
         const itemsSubtotal = bizItems.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
-        const discountAmount = j.discount || 0;
+        
+        let discountAmount = 0;
+        const businesses = new Set([...(j.services || []), ...(j.ppfs || []), ...(j.accessories || [])].map(item => item.business));
+        if ((j as any).laborBusiness) businesses.add((j as any).laborBusiness);
+        
+        if (businesses.size > 1) {
+          discountAmount = biz === "Auto Gamma" ? (j.autoGammaDiscount || 0) : (j.agnxDiscount || 0);
+        } else {
+          discountAmount = j.discount || 0;
+        }
+
         const subtotalAfterDiscount = itemsSubtotal - discountAmount;
         const gstRate = j.gst || 18;
         
