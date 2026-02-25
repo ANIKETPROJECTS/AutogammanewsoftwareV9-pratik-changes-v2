@@ -758,23 +758,6 @@ export class MongoStorage implements IStorage {
     });
     await j.save();
 
-    // Deduct accessory stock
-    if (j.accessories && j.accessories.length > 0) {
-      for (const item of (j.accessories as any[])) {
-        const accId = item.accessoryId || item.id || item._id;
-        if (accId && accId !== "undefined") {
-          const accessory = await AccessoryMasterModel.findById(accId);
-          if (accessory) {
-            const qtyToDeduct = Number(item.quantity || 1);
-            const currentStock = Number(accessory.quantity || 0);
-            const newQty = Math.max(0, currentStock - qtyToDeduct);
-            console.log(`[CREATE JOB CARD] Deducting ${qtyToDeduct} from ${accessory.name}. Old stock: ${currentStock}, New stock: ${newQty}`);
-            await AccessoryMasterModel.findByIdAndUpdate(accessory._id, { quantity: newQty });
-          }
-        }
-      }
-    }
-
     // Generate invoices for new job card
     const businesses = ["Auto Gamma", "AGNX"] as const;
     const yearInvoice = new Date().getFullYear();
@@ -1058,23 +1041,6 @@ export class MongoStorage implements IStorage {
           if (modified) {
             ppfMaster.markModified("rolls");
             await ppfMaster.save();
-          }
-        }
-      }
-    }
-
-    // Handle accessory stock deduction for new accessories added during update
-    if (jobCard.accessories && existingJob) {
-      const existingAccIds = (existingJob as any).accessories?.map((a: any) => String(a.id || a.accessoryId)) || [];
-      for (const acc of jobCard.accessories) {
-        const currentAccId = String(acc.accessoryId || acc.id);
-        if (!existingAccIds.includes(currentAccId)) {
-          const accessory = await AccessoryMasterModel.findById(currentAccId);
-          if (accessory) {
-            const qtyToDeduct = Number(acc.quantity || 1);
-            const newQty = Math.max(0, (accessory.quantity || 0) - qtyToDeduct);
-            await AccessoryMasterModel.findByIdAndUpdate(accessory._id, { quantity: newQty });
-            console.log(`[STORAGE UPDATE JOBCARD] Deducted ${qtyToDeduct} from ${accessory.name}. New stock: ${newQty}`);
           }
         }
       }
