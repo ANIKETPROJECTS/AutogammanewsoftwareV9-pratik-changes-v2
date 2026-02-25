@@ -1091,28 +1091,30 @@ export class MongoStorage implements IStorage {
       });
       
       // Accessories with category
-      j.accessories?.forEach(async (a) => {
-        if ((a as any).business === biz) {
-          const accId = (a as any).accessoryId || (a as any).id;
-          let categoryName = (a as any).category || accId;
+      if (j.accessories) {
+        for (const a of j.accessories) {
+          if ((a as any).business === biz) {
+            const accId = (a as any).accessoryId || (a as any).id;
+            let categoryName = (a as any).category || accId;
 
-          // Attempt to resolve category name from AccessoryMaster if it looks like an ID
-          if (accId && mongoose.Types.ObjectId.isValid(accId)) {
-            const accessory = await AccessoryMasterModel.findById(accId);
-            if (accessory) {
-              categoryName = accessory.category;
+            // Attempt to resolve category name from AccessoryMaster if it looks like an ID
+            if (accId && mongoose.Types.ObjectId.isValid(accId)) {
+              const accessory = await AccessoryMasterModel.findById(accId);
+              if (accessory) {
+                categoryName = accessory.category;
+              }
             }
-          }
 
-          bizItems.push({ 
-            name: a.name, 
-            price: a.price, 
-            quantity: (a as any).quantity || 1, 
-            type: "Accessory",
-            category: categoryName
-          });
+            bizItems.push({ 
+              name: a.name, 
+              price: a.price, 
+              quantity: (a as any).quantity || 1, 
+              type: "Accessory",
+              category: categoryName
+            });
+          }
         }
-      });
+      }
       
       // Labor - tracked separately
       if ((j as any).laborBusiness === biz && j.laborCharge > 0) {
