@@ -268,13 +268,16 @@ export default function AddJobPage() {
           }
           return acc;
         }, []),
-        accessories: (jobToEdit.accessories || []).map(a => ({
-          accessoryId: (a as any).accessoryId || (a as any).id,
-          id: (a as any).accessoryId || (a as any).id,
-          name: a.name,
-          price: a.price,
-          quantity: a.quantity || 1
-        })),
+        accessories: (jobToEdit.accessories || []).map(a => {
+          const accId = (a as any).accessoryId || (a as any).id || (a as any)._id;
+          return {
+            accessoryId: String(accId),
+            id: String(accId),
+            name: a.name,
+            price: a.price,
+            quantity: a.quantity || 1
+          };
+        }),
         laborCharge: jobToEdit.laborCharge || 0,
         discount: jobToEdit.discount || 0,
         gst: jobToEdit.gst ?? 0,
