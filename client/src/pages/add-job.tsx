@@ -561,21 +561,41 @@ export default function AddJobPage() {
   const handleAddAccessory = () => {
     const a = accessories.find(item => item.id === selectedAccessory);
     if (a) {
-      if (accessoryQty > a.quantity) {
+      const usedInCurrentJob = accessoryFields.reduce((sum, field: any) => {
+        if (field.accessoryId === selectedAccessory) {
+          return sum + (Number(field.quantity) || 0);
+        }
+        return sum;
+      }, 0);
+      const remainingStock = a.quantity - usedInCurrentJob;
+
+      if (accessoryQty > remainingStock) {
         toast({
           title: "Insufficient Stock",
-          description: `Only ${a.quantity} units available in stock.`,
+          description: `Only ${remainingStock} units available in stock (accounting for items already in this job).`,
           variant: "destructive",
         });
         return;
       }
-      appendAccessory({ 
-        accessoryId: a.id!, 
-        id: a.id!,
-        name: a.name, 
-        price: a.price,
-        quantity: accessoryQty 
-      } as any);
+
+      // Check if already in list to update quantity instead of appending
+      const existingIndex = accessoryFields.findIndex((field: any) => field.accessoryId === a.id);
+      if (existingIndex !== -1) {
+        const currentAccessories = [...form.getValues("accessories")];
+        currentAccessories[existingIndex] = {
+          ...currentAccessories[existingIndex],
+          quantity: (Number(currentAccessories[existingIndex].quantity) || 0) + accessoryQty
+        };
+        form.setValue("accessories", currentAccessories);
+      } else {
+        appendAccessory({ 
+          accessoryId: a.id!, 
+          id: a.id!,
+          name: a.name, 
+          price: a.price,
+          quantity: accessoryQty 
+        } as any);
+      }
       setSelectedAccessory("");
       setAccessoryQty(1);
     }
@@ -1274,7 +1294,17 @@ export default function AddJobPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {accessories.filter(a => a.category === selectedAccessoryCategory).map(a => (
-                          <SelectItem key={a.id} value={a.id!}>{a.name} (Stock: {a.quantity})</SelectItem>
+                          <SelectItem key={a.id} value={a.id!}>
+                            {a.name} (Stock: {(() => {
+                              const usedInCurrentJob = accessoryFields.reduce((sum, field: any) => {
+                                if (field.accessoryId === a.id) {
+                                  return sum + (Number(field.quantity) || 0);
+                                }
+                                return sum;
+                              }, 0);
+                              return (a.quantity || 0) - usedInCurrentJob;
+                            })()})
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -1293,6 +1323,23 @@ export default function AddJobPage() {
                     <Button type="button" onClick={handleAddAccessory} className="w-full h-11 bg-red-100 text-red-600 hover:bg-red-200 border-none font-semibold">
                       Add Accessory
                     </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-muted-foreground uppercase">Available Amount</label>
+                    <div className="h-11 flex items-center px-3 border rounded-md bg-slate-50 font-medium text-slate-700">
+                      {selectedAccessory ? (() => {
+                        const accessory = accessories.find(a => a.id === selectedAccessory);
+                        const usedInCurrentJob = accessoryFields.reduce((sum, field: any) => {
+                          if (field.accessoryId === selectedAccessory) {
+                            return sum + (Number(field.quantity) || 0);
+                          }
+                          return sum;
+                        }, 0);
+                        return `${(accessory?.quantity || 0) - usedInCurrentJob} units`;
+                      })() : "Select Accessory"}
+                    </div>
                   </div>
                 </div>
             {accessoryFields.length > 0 && (
