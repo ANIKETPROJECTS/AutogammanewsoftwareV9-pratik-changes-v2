@@ -269,14 +269,16 @@ function PrintableInvoice({ invoice }: { invoice: Invoice }) {
             </div>
           )}
           
-          <div className="flex justify-between text-green-600 pb-2 border-b border-slate-200">
-            <span className="font-medium">Discount</span>
-            <span className="font-bold">(-) ₹{(invoice.discount || 0).toLocaleString()}</span>
-          </div>
+          {discount > 0 && (
+            <div className="flex justify-between text-green-600 pb-2 border-b border-slate-200">
+              <span className="font-medium">Discount</span>
+              <span className="font-bold">(-) ₹{discount.toLocaleString()}</span>
+            </div>
+          )}
 
           <div className="flex justify-between text-slate-600 pb-2 border-b border-slate-200">
             <span className="font-medium">SubTotal</span>
-            <span className="font-bold">₹{(invoice.subtotal - discount).toLocaleString()}</span>
+            <span className="font-bold">₹{(invoice.subtotal - (invoice.discount || 0)).toLocaleString()}</span>
           </div>
 
           {(() => {
@@ -288,15 +290,19 @@ function PrintableInvoice({ invoice }: { invoice: Invoice }) {
 
             return (
               <>
-                <div className="flex justify-between text-slate-600">
-                  <span className="font-medium">(+) SGST: {(gstRate / 2).toFixed(2)}%</span>
-                  <span className="font-bold">₹{Math.round(halfGstAmount).toLocaleString()}</span>
-                </div>
+                {gstRate > 0 && (
+                  <>
+                    <div className="flex justify-between text-slate-600">
+                      <span className="font-medium">(+) SGST: {(gstRate / 2).toFixed(2)}%</span>
+                      <span className="font-bold">₹{Math.round(halfGstAmount).toLocaleString()}</span>
+                    </div>
 
-                <div className="flex justify-between text-slate-600 pb-2 border-b border-slate-200">
-                  <span className="font-medium">(+) CGST: {(gstRate / 2).toFixed(2)}%</span>
-                  <span className="font-bold">₹{Math.round(halfGstAmount).toLocaleString()}</span>
-                </div>
+                    <div className="flex justify-between text-slate-600 pb-2 border-b border-slate-200">
+                      <span className="font-medium">(+) CGST: {(gstRate / 2).toFixed(2)}%</span>
+                      <span className="font-bold">₹{Math.round(halfGstAmount).toLocaleString()}</span>
+                    </div>
+                  </>
+                )}
               </>
             );
           })()}

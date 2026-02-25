@@ -751,8 +751,8 @@ export default function AddJobPage() {
       }
     }
 
-    const autoGammaDiscount = discountBusiness === "Auto Gamma" ? discount : (discountBusiness === "Split" ? discountSplit.autoGamma : 0);
-    const agnxDiscount = discountBusiness === "AGNX" ? discount : (discountBusiness === "Split" ? discountSplit.agnx : 0);
+    const autoGammaDiscount = discountBusiness === "Auto Gamma" ? discount : (discountBusiness === "Split" ? (Number(discountSplit.autoGamma) || 0) : 0);
+    const agnxDiscount = discountBusiness === "AGNX" ? discount : (discountBusiness === "Split" ? (Number(discountSplit.agnx) || 0) : 0);
 
     const formattedData = {
       ...pendingFormData,
